@@ -13,6 +13,9 @@ public class BoltInteractable : MonoBehaviour, IInteractable
     // Referencia a la tuerca asignada a este perno
     [SerializeField] private NutInteractable assignedNut;
 
+    // Expone SequenceIndex para que el Manager lo encuentre
+    public int SequenceIndex => sequenceIndex;
+
     // Evento vital para que el BopManager sepa cuándo se completó este perno (Observer Pattern)
     public event Action OnBoltSecured;
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -15,6 +16,9 @@ namespace Bop.Managers
         // Conecta respuestas desde la interfaz gráfica del Editor con UnityEvent
         public UnityEvent OnLevelCompleted;
 
+        // Evento que notifica a la UI la posición del perno actual
+        public event Action<Transform> OnTargetChanged;
+
         private int pernosApretados;
 
         // Expone el índice esperado actual
@@ -27,6 +31,12 @@ namespace Bop.Managers
             {
                 perno.Initialize(this);
             }
+        }
+
+        // Emite el primer perno una vez que todos los objetos se inicializaron
+        private void Start()
+        {
+            UpdateIndicator();
         }
 
         private void OnEnable()
@@ -58,12 +68,34 @@ namespace Bop.Managers
         {
             pernosApretados++; // Aumenta contador de progreso
 
+            // Actualiza la UI al siguiente perno
+            UpdateIndicator();
+
             // Condicion: se han apretado todos los pernos?
             if (pernosApretados >= pernosEnNivel.Count)
             {
                 // Disparamos secuencia de fin de nivel de forma asíncrona
                 ExecuteWinSequenceAsync();
             }
+        }
+
+        // Determina cual es el siguiente objeto lógico en la secuencia
+        private void UpdateIndicator()
+        {
+            // Bucle sobre la lista del orden de los pernos
+            foreach (BoltInteractable perno in pernosEnNivel)
+            {
+                //Compara coincidencias de los indices del perno seleccionado y el de la secuencia
+                if (perno.SequenceIndex == CurrentExpectedIndex)
+                {
+                    // Verifica si hay script suscrito al evento OnTargetChanged y envia transform a suscriptores
+                    OnTargetChanged?.Invoke(perno.transform);
+                    return;
+                }
+            }
+
+            // Si no hay más pernos, oculta el indicador
+            OnTargetChanged?.Invoke(null);
         }
 
         // Async indica que contiene código asíncrono.
