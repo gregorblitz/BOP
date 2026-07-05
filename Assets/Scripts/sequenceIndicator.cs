@@ -51,8 +51,7 @@ namespace Bop.UI
             }
         }
 
-        // Usamos LateUpdate para asegurar que calculamos sobre la posición final del objetivo 
-        // en caso de que el objeto padre (la válvula BOP) se estuviera moviendo en este frame.
+        // Asegura calculos sobre la posición final del objetivo 
         private void LateUpdate()
         {
             if (currentTarget == null) return;

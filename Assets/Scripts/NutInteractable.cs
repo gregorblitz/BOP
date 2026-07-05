@@ -52,7 +52,7 @@ public class NutInteractable : MonoBehaviour, IInteractable
 
         try
         {
-            // Unity 6: Esperamos la duración de la animación sin bloquear el hilo.
+            // Espera la duración de la animación sin bloquear el hilo.
             // destroyCancellationToken cancela automáticamente la espera si el objeto es destruido.
             await Awaitable.WaitForSecondsAsync(animationDuration, destroyCancellationToken);
 
