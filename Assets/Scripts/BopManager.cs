@@ -7,6 +7,8 @@ namespace Bop.Managers
     public class BopManager : MonoBehaviour
     {
         [Header("Referencias del Nivel")]
+
+        // Hace una lista con los pernos en el orden requerido y se asignan en el inspector (obj vacio BopManager)
         [SerializeField] private List<BoltInteractable> pernosEnNivel = new();
 
         [Header("Eventos")]
@@ -14,6 +16,18 @@ namespace Bop.Managers
         public UnityEvent OnLevelCompleted;
 
         private int pernosApretados;
+
+        // Expone el índice esperado actual
+        public int CurrentExpectedIndex => pernosApretados + 1;
+
+        private void Awake()
+        {
+            // Inyección de dependencia: pasamos este manager a cada perno al inicio
+            foreach (BoltInteractable perno in pernosEnNivel)
+            {
+                perno.Initialize(this);
+            }
+        }
 
         private void OnEnable()
         {
@@ -31,6 +45,12 @@ namespace Bop.Managers
             {
                 perno.OnBoltSecured -= HandleBoltSecured;
             }
+        }
+
+        // Método de validación consultado por los pernos
+        public bool IsNextInSequence(int sequenceIndex)
+        {
+            return sequenceIndex == CurrentExpectedIndex;
         }
 
         // Event Handler: Se dispara cuando un perno se reporta asegurado

@@ -1,9 +1,14 @@
 using System;
 using UnityEngine;
 using Game.Interactions; 
+using Bop.Managers;
 
 public class BoltInteractable : MonoBehaviour, IInteractable
 {
+    [Header("Configuración de Secuencia")]
+    [SerializeField, Tooltip("El orden de este perno en el patrón de apriete (1 al 8)")]
+    private int sequenceIndex;
+
     [Header("Referencia a la Tuerca")]
     // Referencia a la tuerca asignada a este perno
     [SerializeField] private NutInteractable assignedNut;
@@ -13,6 +18,13 @@ public class BoltInteractable : MonoBehaviour, IInteractable
 
     // Estado interno del perno
     private bool hasNut;
+
+    private BopManager _manager;
+
+    public void Initialize(BopManager manager)
+    {
+        _manager = manager;
+    }
 
     // Suscripción de eventos en OnEnable/OnDisable
     // Suscribe al evento de la tuerca al activarse el objeto (OnEnable)
@@ -30,6 +42,14 @@ public class BoltInteractable : MonoBehaviour, IInteractable
     {
         // Si ya tiene tuerca abortar acción
         if (hasNut) return;
+
+        // Validación de la secuencia requerida orden establecido (1-8)
+        //Envia mensaje si no se sigue la secuencia
+        if (!_manager.IsNextInSequence(sequenceIndex))
+        {
+            Debug.LogWarning($"[Secuencia] Acción anulada. Esperando el perno #{_manager.CurrentExpectedIndex}, pero se clickeó el #{sequenceIndex}.");
+            return;
+        }
 
         hasNut = true;
         // Invoca el método de la tuerca, le pasa la posición (este perno) como padre
