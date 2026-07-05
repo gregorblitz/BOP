@@ -10,12 +10,19 @@ namespace Bop.UI
         private BopManager bopManager;
 
         [Header("Configuración de Animación")]
-        [SerializeField] private float yOffset = 0.5f;
-        [SerializeField] private float bobSpeed = 4f;
-        [SerializeField] private float bobHeight = 0.1f;
+        [SerializeField] private float fixedPlaneY = 0.005f; // Define el piso virtual
+
+        [SerializeField, Tooltip("Desplazamiento en el eje Z para no tapar el perno")] 
+        private float zOffset = 0.5f;
+        [SerializeField] private float bobSpeed = 4f; // velocidad rebote
+        [SerializeField] private float bobHeight = 0.1f; // rebote en eje z
+
+        [SerializeField, Tooltip("Velocidad de traslado horizontal entre pernos")] 
+        private float transitionSpeed = 10f; // Velocidad de la interpolación
 
         private Transform currentTarget;
-        private float baseY;
+        // Almacena la posición plana en (X, 0, Z base) para la interpolación
+        private Vector3 currentTrackingPos;
 
         private void OnEnable()
         {
@@ -31,10 +38,17 @@ namespace Bop.UI
 
         private void HandleTargetChanged(Transform newTarget)
         {
+            bool wasNull = currentTarget == null;
             currentTarget = newTarget;
-            
+
             // Activa o desactiva el GameObject de la flecha según haya un objetivo
             gameObject.SetActive(currentTarget != null);
+            
+            // Si acaba de aparecer (primer perno) se salta la transición y hace snap instantáneo
+            if (wasNull && currentTarget != null)
+            {
+                currentTrackingPos = new Vector3(currentTarget.position.x, 0f, currentTarget.position.z + zOffset);
+            }
         }
 
         // Usamos LateUpdate para asegurar que calculamos sobre la posición final del objetivo 
@@ -44,16 +58,19 @@ namespace Bop.UI
             if (currentTarget == null) return;
 
             Vector3 targetPos = currentTarget.position;
-            baseY = targetPos.y + yOffset;
+
+            // Calcula la posición objetivo base con offset en Z para no tapar perno
+            Vector3 targetTrackingPos = new Vector3(targetPos.x, 0f, targetPos.z + zOffset);
             
-            // Animación matemática (Zero Allocation)
-            float dynamicY = baseY + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
+            // Interpolación suave (Lerp) de seguimiento en X y Z base
+            currentTrackingPos = Vector3.Lerp(currentTrackingPos, targetTrackingPos, Time.deltaTime * transitionSpeed);
+
+            // Aplica el rebote (salto) dinámico sumándolo a la posición Z actual
+            float dynamicZ = currentTrackingPos.z + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
             
-            transform.position = new Vector3(targetPos.x, dynamicY, targetPos.z);
+            // Fusión final de matrices: Y queda inamovible usando fixedPlaneY
+            transform.position = new Vector3(currentTrackingPos.x, fixedPlaneY, dynamicZ);
             
-            // Descomenta la siguiente línea si el indicador es un Sprite 2D (Billboard) 
-            // para que siempre mire hacia la cámara del jugador.
-            // transform.forward = Camera.main.transform.forward;
         }
     }
 }

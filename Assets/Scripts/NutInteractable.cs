@@ -14,6 +14,10 @@ public class NutInteractable : MonoBehaviour, IInteractable
     // Evita lógicas duplicadas
     private bool isSecured;
 
+    [Header("Configuración de Animación")]
+    [SerializeField, Tooltip("Tiempo en segundos que dura la animación de atornillado")]
+    private float animationDuration = 1.5f; // Ajustar en el Inspector según duracion animación atornillado
+
     // Referencia el componente al inicio
     private void Awake()
     {
@@ -34,7 +38,7 @@ public class NutInteractable : MonoBehaviour, IInteractable
     public void OnPrimaryClick() { }
 
     // Click Derecho en la tuerca: Atornillar
-    public void OnSecondaryClick()
+    public async void OnSecondaryClick()
     {
         // Si ya está asegurada evita doble atornillado
         if (isSecured) return;
@@ -46,8 +50,20 @@ public class NutInteractable : MonoBehaviour, IInteractable
             animator.SetTrigger(screwTriggerHash);
         }
 
-        // invoca el evento solo si hay objetos escuchándolo. Notifica que la tuerca terminó su trabajo
-        OnNutSecured?.Invoke();
-        Debug.Log($"[NutInteractable] Tuerca {gameObject.name} atornillada exitosamente.");
+        try
+        {
+            // Unity 6: Esperamos la duración de la animación sin bloquear el hilo.
+            // destroyCancellationToken cancela automáticamente la espera si el objeto es destruido.
+            await Awaitable.WaitForSecondsAsync(animationDuration, destroyCancellationToken);
+
+            // Una vez que el Awaitable termina (animación completada) dispara el evento
+            OnNutSecured?.Invoke();
+            Debug.Log($"[NutInteractable] Tuerca {gameObject.name} atornillada exitosamente.");
+        }
+        catch (OperationCanceledException)
+        {
+            // Captura segura: Ocurre si la escena cambia o el objeto se destruye antes de terminar el await.
+            Debug.Log($"[NutInteractable] Animación cancelada para {gameObject.name}.");
+        }
     }
 }
