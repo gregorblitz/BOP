@@ -19,6 +19,10 @@ namespace Bop.Managers
         // Evento que notifica a la UI la posición del perno actual
         public event Action<Transform> OnTargetChanged;
 
+        // Eventos para la UI
+        public event Action<string> OnInstructionUpdated;
+        public event Action<int, int> OnSequenceError;
+
         private int pernosApretados;
 
         // Expone el índice esperado actual
@@ -62,6 +66,10 @@ namespace Bop.Managers
         {
             return sequenceIndex == CurrentExpectedIndex;
         }
+        // Métodos públicos para ser invocados por los pernos
+        public void ReportSequenceError(int clickedIndex) => OnSequenceError?.Invoke(CurrentExpectedIndex, clickedIndex);
+        
+        public void UpdateInstruction(string message) => OnInstructionUpdated?.Invoke(message);
 
         // Event Handler: Se dispara cuando un perno se reporta asegurado
         private void HandleBoltSecured()
@@ -90,12 +98,15 @@ namespace Bop.Managers
                 {
                     // Verifica si hay script suscrito al evento OnTargetChanged y envia transform a suscriptores
                     OnTargetChanged?.Invoke(perno.transform);
+                    // Instrucción por defecto al pasar a un nuevo perno
+                    UpdateInstruction($"Oprime Click Izquierdo en el perno #{CurrentExpectedIndex} indicado por la flecha para poner la tuerca.");
                     return;
                 }
             }
 
             // Si no hay más pernos, oculta el indicador
             OnTargetChanged?.Invoke(null);
+            UpdateInstruction("¡Secuencia completada con éxito!");
         }
 
         // Async indica que contiene código asíncrono.

@@ -50,14 +50,16 @@ public class BoltInteractable : MonoBehaviour, IInteractable
         //Envia mensaje si no se sigue la secuencia
         if (!_manager.IsNextInSequence(sequenceIndex))
         {
-            Debug.LogWarning($"[Secuencia] Acción anulada. Esperando el perno #{_manager.CurrentExpectedIndex}, pero se clickeó el #{sequenceIndex}.");
+            // Reporta error a la UI
+            _manager.ReportSequenceError(sequenceIndex);
             return;
         }
 
         hasNut = true;
         // Invoca el método de la tuerca, le pasa la posición (este perno) como padre
         assignedNut.Place(transform);
-        Debug.Log($"[BoltInteractable] Tuerca transferida a {gameObject.name}. Ahora haz click derecho sobre la tuerca.");
+        // Actualizamos la instrucción en pantalla
+        _manager.UpdateInstruction($"Tuerca colocada en el perno #{sequenceIndex}. Ahora haz Click Derecho para atornillar.");
     }
 
     // Click Derecho: Atornillar
@@ -65,7 +67,8 @@ public class BoltInteractable : MonoBehaviour, IInteractable
     {
         if (!hasNut)
         {
-            Debug.LogWarning("[BoltInteractable] Primero debes colocar la tuerca (Click Izquierdo).");
+            // Opcional: Feedback si intenta atornillar sin haber puesto la tuerca
+            _manager.UpdateInstruction($"<color=#FFB300>Atención:</color> Primero coloca la tuerca con Click Izquierdo.");
         }
     }
 }
